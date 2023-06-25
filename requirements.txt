@@ -1,0 +1,4 @@
+discord.py
+waifuim.py
+asyncio
+jikanpy
