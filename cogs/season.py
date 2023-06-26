@@ -13,7 +13,7 @@ class season(commands.Cog):
     async def season(self, interaction: discord.Interaction, extension: str = None, season: str = None, year: int = None):
         list = ''
         if season != None: season = season.capitalize().replace(' ', '')
-        if season != None and extension == None: year = datetime.datetime.now().year
+        if season != None and extension == None and year == None: year = datetime.datetime.now().year
         if season == None and year == None and extension == None: extension = 'now'
         if season != None or year != None: extension = None
 

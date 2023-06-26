@@ -17,7 +17,7 @@ path : str = os.path.dirname(sys.argv[0])
 class Bot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='ar!', intents=discord.Intents.all())
-        self.cogslist = ['hi', 'season', 'waifu']
+        self.cogslist = ['season', 'waifu', 'help']
 
     async def on_ready(self):
         for guildname in self.guilds:
