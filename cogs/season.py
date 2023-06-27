@@ -19,9 +19,20 @@ class season(commands.Cog):
         if extension != None:
              title = 'Now airing anime series' if extension.lower() == 'now' else 'Upcoming anime series'
         else: title = f'Anime series of {season} {year}'
+        match season:
+            case 'Winter':
+                color = 0x24D4FF
+            case 'Spring':
+                color = 0xB6FF1B
+            case 'Summer':
+                color = 0xFF0000
+            case 'Fall':
+                color = 0xFFA500
+            case _:
+                color = 0xFFFE00
         for i in jikan.seasons(extension=extension, season = season, year = year)['data']:
             list += '- ' + i['title'] + '\n'
-        embed = discord.Embed(title=title, description=list, color=0x00ff00)
+        embed = discord.Embed(title=title, description=list, color=color)
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
