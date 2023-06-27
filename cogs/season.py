@@ -16,10 +16,12 @@ class season(commands.Cog):
         if season != None and extension == None and year == None: year = datetime.datetime.now().year
         if season == None and year == None and extension == None: extension = 'now'
         if season != None or year != None: extension = None
-
+        if extension != None:
+             title = 'Now airing anime series' if extension.lower() == 'now' else 'Upcoming anime series'
+        else: title = f'Anime series of {season} {year}'
         for i in jikan.seasons(extension=extension, season = season, year = year)['data']:
             list += '- ' + i['title'] + '\n'
-        embed = discord.Embed(title=f'Anime series of: ', description=list, color=0x00ff00)
+        embed = discord.Embed(title=title, description=list, color=0x00ff00)
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
