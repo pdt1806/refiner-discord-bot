@@ -3,14 +3,22 @@
 import discord, os, json, asyncio, sys
 from discord import Guild
 from discord.ext import commands
+from pymongo.mongo_client import MongoClient
 
 #------------------#
 
-bot = commands.Bot(intents=discord.Intents.all(), command_prefix='ar!', application_id='1121931862546329631')
-
 path : str = os.path.dirname(sys.argv[0])
 
-# servers_data = {}
+secured_data = json.load(open(path + '/secured_data.json', 'r'))
+
+uri = secured_data['db_uri']
+
+client = MongoClient(uri)
+db = client.server
+
+
+bot = commands.Bot(intents=discord.Intents.all(), command_prefix='ar!', application_id='1121931862546329631')
+
 
 #------------------#
 
@@ -21,7 +29,7 @@ class Bot(commands.Bot):
 
     async def on_ready(self):
         for guildname in self.guilds:
-            print(f'Joined {guildname.name}')
+            print(f'Joined {guildname.id}')
             # await get_data(path, guildname)
         synced = await bot.tree.sync()
         print(f'{len(synced)} application commands synced!')
@@ -35,28 +43,28 @@ class Bot(commands.Bot):
             print(f'Loaded {cog} cog!')
     
 
-# async def get_data(path : str, guild: Guild):
-#     data : dict = json.load(open(path + '/servers_data/data.json'))
-#     print(data)
-#     if not data[{guild.id}]:
-#         member_data = {}
-#         for member in guild.members:
-#             member_data.update({member.id: {
-#                 "name": member.name,
-#                 "joined_at": member.joined_at,
-#                 "status": member.status,
-#                 "display_name": member.display_name,
-#                 "anime_list": [],
-#                 "unwatched_anime": [],
-#                 "watched_anime": [],
-#             }})
-#         await data.update({guild.id: {
-#             "name": guild.name,
-#             "members": member_data,
-#         }})
-#         await json.dump(data, path + '/servers_data/data.json', 'a')
-#     await print('Data loaded!')
-#     return data[{guild.id}]
+async def get_data(path : str, guild: Guild):
+    data : dict = json.load(open(path + '/servers_data/data.json'))
+    print(data)
+    if not data[{guild.id}]:
+        member_data = {}
+        for member in guild.members:
+            member_data.update({member.id: {
+                "name": member.name,
+                "joined_at": member.joined_at,
+                "status": member.status,
+                "display_name": member.display_name,
+                "anime_list": [],
+                "unwatched_anime": [],
+                "watched_anime": [],
+            }})
+        await data.update({guild.id: {
+            "name": guild.name,
+            "members": member_data,
+        }})
+        await json.dump(data, path + '/servers_data/data.json', 'a')
+    await print('Data loaded!')
+    return data[{guild.id}]
 
 #------------------#
 
@@ -64,8 +72,7 @@ bot = Bot()
 
 async def main():
     async with bot:
-        config = json.load(open(path + '/config.json', 'r'))
         await bot.load()
-        await bot.start(config["token"])
+        await bot.start(secured_data["token"])
 
 asyncio.run(main())
