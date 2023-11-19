@@ -1,6 +1,5 @@
 discord.py
 waifuim.py
 asyncio
-jikanpy
-pymongo==3.11
 dnspython
+python-dotenv
