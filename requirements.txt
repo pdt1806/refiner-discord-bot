@@ -3,3 +3,4 @@ waifuim.py
 asyncio
 dnspython
 python-dotenv
+flask
