@@ -76,7 +76,9 @@ def get_user_info(userid):
         'username': member.name,
         'avatar_url': member.avatar.url,
         'status': member.status[0],
-        'id': member.id
+        'id': member.id,
+        'banner': member.banner.url if member.banner else None,
+        'created_at': member.created_at.strftime('%m-%d-%Y %H:%M:%S'),
     }
 
     return jsonify(user_info)
