@@ -12,7 +12,7 @@ load_dotenv()
 TOKEN = os.environ['TOKEN']
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://*.bennynguyen.us"}})
+CORS(app, resources={r"/*": {"origins": "https://*.bennynguyen.us", "supports_credentials": True}})
 
 bot = commands.Bot(intents=discord.Intents.all(),
                    command_prefix='ref!', application_id='1121931862546329631')
