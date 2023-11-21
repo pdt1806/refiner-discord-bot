@@ -4,3 +4,4 @@ asyncio
 dnspython
 python-dotenv
 flask
+flask-cors

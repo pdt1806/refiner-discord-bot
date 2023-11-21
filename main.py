@@ -4,6 +4,7 @@ from discord.ext import commands
 from dotenv import load_dotenv
 import os
 from flask import Flask, jsonify
+from flask_cors import CORS
 import threading
 
 load_dotenv()
@@ -11,6 +12,7 @@ load_dotenv()
 TOKEN = os.environ['TOKEN']
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "https://*.bennynguyen.us"}})
 
 bot = commands.Bot(intents=discord.Intents.all(),
                    command_prefix='ref!', application_id='1121931862546329631')
@@ -74,7 +76,7 @@ def get_user_info(userid):
 
     user_info = {
         'username': member.name,
-        'avatar_url': member.avatar.url,
+        'avatar': member.avatar.url,
         'status': member.status[0],
         'id': member.id,
         'banner': member.banner.url if member.banner else None,
