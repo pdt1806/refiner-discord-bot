@@ -12,7 +12,8 @@ load_dotenv()
 TOKEN = os.environ['TOKEN']
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://disi.bennynguyen.us"}}, supports_credentials=True)
+CORS(app, resources={
+     r"/*": {"origins": "https://disi.bennynguyen.us"}}, supports_credentials=True)  # normal one
 
 bot = commands.Bot(intents=discord.Intents.all(),
                    command_prefix='ref!', application_id='1121931862546329631')
@@ -53,7 +54,7 @@ bot = Bot()
 
 @app.route('/')
 def home():
-    return jsonify({'message': 'Welcome to the Discord Bot API!'})
+    return jsonify({'message': 'API of Refiner Discord Bot'})
 
 
 @app.route('/sync_commands')
@@ -75,11 +76,11 @@ def get_user_info(userid):
         return jsonify({'error': 'User not found in the server.'}), 404
 
     user_info = {
+        'id': member.id,
         'username': member.name,
         'avatar': member.avatar.url,
         'status': member.status[0],
-        'id': member.id,
-        'banner': member.banner.url if member.banner else None,
+        # 'banner': member.banner.url if member.banner else None,
         'created_at': member.created_at.strftime('%m-%d-%Y %H:%M:%S'),
     }
 
