@@ -81,7 +81,7 @@ def get_user_info(userid):
     return jsonify(user_info)
 
 @app.route('/username/<username>', methods=['GET'])
-def get_user_info(username):
+def get_id(username):
     if not username:
         return jsonify({'error': 'Username parameter is missing.'}), 400
     
