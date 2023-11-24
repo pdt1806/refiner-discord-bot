@@ -51,16 +51,11 @@ class Bot(commands.Bot):
 
 bot = Bot()
 
+guild = bot.guilds[0]
 
 @app.route('/')
 def home():
     return jsonify({'message': 'API of Refiner Discord Bot'})
-
-
-@app.route('/sync_commands')
-def sync_commands():
-    synced = asyncio.run(bot.tree.sync())
-    return jsonify({'message': f'{len(synced)} application commands synced!'})
 
 
 @app.route('/user/<userid>', methods=['GET'])
@@ -68,7 +63,7 @@ def get_user_info(userid):
     if not userid:
         return jsonify({'error': 'ID parameter is missing.'}), 400
 
-    guild = bot.guilds[0]
+    
 
     member = discord.utils.find(lambda m: m.id == int(userid), guild.members)
 
@@ -82,6 +77,23 @@ def get_user_info(userid):
         'status': member.status[0],
         # 'banner': member.banner.url if member.banner else None,
         'created_at': member.created_at.strftime('%m-%d-%Y %H:%M:%S'),
+    }
+
+    return jsonify(user_info)
+
+@app.route('/username/<username>', methods=['GET'])
+def get_user_info(username):
+    if not username:
+        return jsonify({'error': 'Username parameter is missing.'}), 400
+
+
+    member = discord.utils.find(lambda m: m.name == int(username), guild.members)
+
+    if not member:
+        return jsonify({'error': 'User not found in the server.'}), 404
+
+    user_info = {
+        'id': member.id,
     }
 
     return jsonify(user_info)
