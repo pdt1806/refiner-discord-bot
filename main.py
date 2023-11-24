@@ -87,7 +87,7 @@ def get_id(username):
     
     guild = bot.guilds[0]
 
-    member = discord.utils.find(lambda m: m.name == int(username), guild.members)
+    member = discord.utils.find(lambda m: m.name == username, guild.members)
 
     if not member:
         return jsonify({'error': 'User not found in the server.'}), 404
