@@ -51,7 +51,6 @@ class Bot(commands.Bot):
 
 bot = Bot()
 
-guild = bot.guilds[0]
 
 @app.route('/')
 def home():
@@ -63,7 +62,7 @@ def get_user_info(userid):
     if not userid:
         return jsonify({'error': 'ID parameter is missing.'}), 400
 
-    
+    guild = bot.guilds[0]
 
     member = discord.utils.find(lambda m: m.id == int(userid), guild.members)
 
@@ -85,7 +84,8 @@ def get_user_info(userid):
 def get_user_info(username):
     if not username:
         return jsonify({'error': 'Username parameter is missing.'}), 400
-
+    
+    guild = bot.guilds[0]
 
     member = discord.utils.find(lambda m: m.name == int(username), guild.members)
 
