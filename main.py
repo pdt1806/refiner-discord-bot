@@ -70,21 +70,23 @@ def get_user_info(userid):
         return jsonify({'error': 'User not found in the server.'}), 404
 
     user_info = {
-        'id': member.id,
+        'id': str(member.id),
         'username': member.name,
         'avatar': member.avatar.url,
         'status': member.status[0],
-        # 'banner': member.banner.url if member.banner else None,
-        'created_at': member.created_at.strftime('%m-%d-%Y %H:%M:%S'),
+        'banner': member.banner.url if member.banner else None,
+        'created_at': member.created_at.strftime('%m-%d-%Y'),
+        'current_activity': member.activities[0].name if member.activities else None,
     }
 
     return jsonify(user_info)
+
 
 @app.route('/username/<username>', methods=['GET'])
 def get_id(username):
     if not username:
         return jsonify({'error': 'Username parameter is missing.'}), 400
-    
+
     guild = bot.guilds[0]
 
     member = discord.utils.find(lambda m: m.name == username, guild.members)
@@ -92,11 +94,9 @@ def get_id(username):
     if not member:
         return jsonify({'error': 'User not found in the server.'}), 404
 
-    user_info = {
-        'id': member.id,
-    }
-
-    return jsonify(user_info)
+    return jsonify({
+        'id': str(member.id),
+    })
 
 
 async def run_bot():
