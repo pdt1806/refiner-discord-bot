@@ -3,21 +3,28 @@ import asyncio
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
-from flask import Flask, jsonify
-from flask_cors import CORS
-import threading
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import uvicorn
+from fastapi import HTTPException
+import asyncio
 
 load_dotenv()
 
 TOKEN = os.environ['TOKEN']
 
-app = Flask(__name__)
-CORS(app, resources={
-     r"/*": {"origins": "https://disi.bennynguyen.us"}}, supports_credentials=True)  # normal one
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 bot = commands.Bot(intents=discord.Intents.all(),
                    command_prefix='ref!', application_id='1121931862546329631')
-
 
 # ------------------#
 
@@ -27,24 +34,17 @@ class Bot(commands.Bot):
         self.cogslist = ['waifu']
 
     async def on_ready(self):
-        for guildname in self.guilds:
-            print(f'Joined {guildname.id}')
-        synced = await bot.tree.sync()
-        print(f'{len(synced)} application commands synced!')
+        await self.start_fastapi_server()
 
-        thread = threading.Thread(target=self.start_flask_server)
-        thread.start()
-
-    def start_flask_server(self):
-        app.run(port=7000)
-
-    async def on_guild_join(guild: discord.Guild):
-        print(f'Joined {guild.name}')
-
+    async def start_fastapi_server(self):
+        config = uvicorn.Config(app, host="127.0.0.1", port=7000)
+        server = uvicorn.Server(config)
+        loop = asyncio.get_event_loop()
+        loop.create_task(server.serve())
+    
     async def load(self):
         for cog in self.cogslist:
             await bot.load_extension(f'cogs.{cog}')
-            print(f'Loaded {cog} cog!')
 
 
 # ------------------#
@@ -52,52 +52,58 @@ class Bot(commands.Bot):
 bot = Bot()
 
 
-@app.route('/')
+@app.get("/")
 def home():
-    return jsonify({'message': 'API of Refiner Discord Bot'})
+    return {"message": "API of Refiner Discord Bot"}
 
 
-@app.route('/user/<userid>', methods=['GET'])
-def get_user_info(userid):
+@app.get("/user/{userid}")
+async def get_user_info(userid: int):
     if not userid:
-        return jsonify({'error': 'ID parameter is missing.'}), 400
+        raise HTTPException(status_code=400, detail="ID parameter is missing.")
 
+    try:
+        member = await bot.fetch_user(userid)
+    except (asyncio.TimeoutError, discord.NotFound):
+        raise HTTPException(status_code=404, detail="User not found in the server.")
+    except (RuntimeError, TypeError, NameError):
+        raise HTTPException(status_code=500, detail="Internal Server Error.")
+    
     guild = bot.guilds[0]
+    
+    member2 = discord.utils.find(lambda m: m.id == userid, guild.members)
 
-    member = discord.utils.find(lambda m: m.id == int(userid), guild.members)
-
-    if not member:
-        return jsonify({'error': 'User not found in the server.'}), 404
+    if not member or not member2:
+        raise HTTPException(status_code=404, detail="User not found in the server.")
 
     user_info = {
-        'id': str(member.id),
-        'username': member.name,
-        'display_name': member.display_name,
-        'avatar': member.avatar.url,
-        'status': member.status[0],
-        # 'banner': member.banner.url if member.banner else None,
-        'created_at': member.created_at.strftime('%m-%d-%Y'),
-        # 'current_activity': member.activities[0].name if member.activities else None,
+        "id": str(member.id),
+        "username": member.name,
+        "display_name": member.display_name,
+        "avatar": member.avatar.url if member.avatar else None,
+        "status": str(member2.status[0]),
+        "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
+        "accent_color": str(member.accent_color) if member.accent_color else None,
+        "created_at": member.created_at.strftime("%m-%d-%Y"),
     }
 
-    return jsonify(user_info)
+    return JSONResponse(content=user_info)
 
 
-@app.route('/username/<username>', methods=['GET'])
-def get_id(username):
+
+@app.get("/username/{username}")
+def get_id(username: str):
     if not username:
-        return jsonify({'error': 'Username parameter is missing.'}), 400
+        raise HTTPException(status_code=400, detail="Username parameter is missing.")
 
     guild = bot.guilds[0]
 
     member = discord.utils.find(lambda m: m.name == username, guild.members)
 
     if not member:
-        return jsonify({'error': 'User not found in the server.'}), 404
+        raise HTTPException(status_code=404, detail="User not found in the server.")
 
-    return jsonify({
-        'id': str(member.id),
-    })
+    return {"id": str(member.id)}
 
 
 async def run_bot():
@@ -106,7 +112,4 @@ async def run_bot():
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.create_task(run_bot())
-
-    loop.run_until_complete(bot.start(TOKEN))
+    asyncio.run(run_bot())
