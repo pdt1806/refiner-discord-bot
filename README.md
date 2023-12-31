@@ -19,4 +19,6 @@ Unfortunately, no. This bot is only for personal use (she's mine), and I don't h
 ## Technologies
 
 - [discord.py](https://discordpy.readthedocs.io/en/stable/)
-- [Flask](https://flask.palletsprojects.com/en/2.0.x/)
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [uvicorn](https://www.uvicorn.org/)
+- [waifuim.py](https://github.com/Waifu-im/waifuim.py)
