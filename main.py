@@ -64,10 +64,11 @@ async def get_user_info(userid: int):
 
     try:
         member = await bot.fetch_user(userid)
-    except (asyncio.TimeoutError, discord.NotFound):
-        raise HTTPException(status_code=404, detail="User not found in the server.")
-    except (RuntimeError, TypeError, NameError):
-        raise HTTPException(status_code=500, detail="Internal Server Error.")
+    except discord.NotFound:
+        raise HTTPException(status_code=404, detail="User not found.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+
     
     guild = bot.guilds[0]
     
@@ -76,19 +77,20 @@ async def get_user_info(userid: int):
     if not member or not member2:
         raise HTTPException(status_code=404, detail="User not found in the server.")
 
-    user_info = {
-        "id": str(member.id),
-        "username": member.name,
-        "display_name": member.display_name,
-        "avatar": member.avatar.url if member.avatar else None,
-        "status": str(member2.status[0]),
-        "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
-        "accent_color": str(member.accent_color) if member.accent_color else None,
-        "created_at": member.created_at.strftime("%m-%d-%Y"),
-    }
-
-    return JSONResponse(content=user_info)
-
+    try:
+        user_info = {
+            "id": str(member.id),
+            "username": member.name,
+            "display_name": member.display_name,
+            "avatar": member.avatar.url if member.avatar else member.default_avatar.url if member.default_avatar else None,
+            "status": str(member2.status[0]),
+            "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
+            "accent_color": str(member.accent_color) if member.accent_color else None,
+            "created_at": member.created_at.strftime("%m-%d-%Y"),
+        }  
+        return JSONResponse(content=user_info)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @app.get("/username/{username}")
