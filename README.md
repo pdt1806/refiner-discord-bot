@@ -4,7 +4,7 @@
 
 ## About Refiner
 
-In order for [Discord Status as Image](https://disi.bennynguyen.us/) to work, users' data need to be obtained by someone powerful, and Refiner is the one who can do that!
+In order for [Discord Status as Image](https://disi.bennynguyen.dev/) to work, users' data need to be obtained by someone powerful, and Refiner is the one who can do that!
 
 Why Refiner? I mean, why not? (￣ ▽ ￣)ノ She is the Greatest Mage of All Time after all 🪄
 
