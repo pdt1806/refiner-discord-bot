@@ -88,14 +88,14 @@ async def get_user_info(userid: int):
             case discord.ActivityType.listening:
                 if isinstance(member2.activity, Spotify):
                     activity.update({
+                        "platform": "Spotify",
                         "name": member2.activity.title,
                         "artists": member2.activity.artists,
                         "album": {
                             "name": member2.activity.album,
                             "cover": member2.activity.album_cover_url,
                         },
-                        "timestamp": {
-                            "duration": str(member2.activity.duration),
+                        "timestamps": {
                             "start": str(member2.activity.start),
                             "end": str(member2.activity.end),
                         },
