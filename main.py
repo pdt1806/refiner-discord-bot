@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 import uvicorn
+from discord import Spotify
 
 
 load_dotenv()
@@ -28,6 +29,7 @@ bot = commands.Bot(intents=discord.Intents.all(),
 
 # ------------------#
 
+
 class Bot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='ref!', intents=discord.Intents.all())
@@ -41,7 +43,7 @@ class Bot(commands.Bot):
         server = uvicorn.Server(config)
         loop = asyncio.get_event_loop()
         loop.create_task(server.serve())
-    
+
     async def load(self):
         for cog in self.cogslist:
             await bot.load_extension(f'cogs.{cog}')
@@ -67,15 +69,45 @@ async def get_user_info(userid: int):
     except discord.NotFound:
         raise HTTPException(status_code=404, detail="User not found.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)}")
 
-    
     guild = bot.guilds[0]
-    
+
     member2 = discord.utils.find(lambda m: m.id == userid, guild.members)
 
     if not member or not member2:
-        raise HTTPException(status_code=404, detail="User not found in the server.")
+        raise HTTPException(
+            status_code=404, detail="User not found in the server.")
+
+    activity = {}
+    if member2.activity:
+        activity["type"] = str(member2.activity.type).replace(
+            "ActivityType.", "")
+        match member2.activity.type:
+            case discord.ActivityType.listening:
+                if isinstance(member2.activity, Spotify):
+                    activity.update({
+                        "name": member2.activity.title,
+                        "artists": member2.activity.artists,
+                        "album": {
+                            "name": member2.activity.album,
+                            "cover": member2.activity.album_cover_url,
+                        },
+                        "timestamp": {
+                            "duration": str(member2.activity.duration),
+                            "start": str(member2.activity.start),
+                            "end": str(member2.activity.end),
+                        },
+                    })
+            case _:
+                activity.update({
+                    "name": member2.activity.name,
+                    "details": member2.activity.details,
+                    "state": member2.activity.state,
+                    "timestamps": member2.activity.timestamps,
+                    "assets": member2.activity.assets,
+                })
 
     try:
         user_info = {
@@ -87,23 +119,27 @@ async def get_user_info(userid: int):
             "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
             "accent_color": str(member.accent_color) if member.accent_color else None,
             "created_at": member.created_at.strftime("%m-%d-%Y"),
-        }  
+            "activity": activity if activity else None,
+        }
         return JSONResponse(content=user_info)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @app.get("/username/{username}")
 def get_id(username: str):
     if not username:
-        raise HTTPException(status_code=400, detail="Username parameter is missing.")
+        raise HTTPException(
+            status_code=400, detail="Username parameter is missing.")
 
     guild = bot.guilds[0]
 
     member = discord.utils.find(lambda m: m.name == username, guild.members)
 
     if not member:
-        raise HTTPException(status_code=404, detail="User not found in the server.")
+        raise HTTPException(
+            status_code=404, detail="User not found in the server.")
 
     return {"id": str(member.id)}
 
