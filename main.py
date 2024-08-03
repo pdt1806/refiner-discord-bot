@@ -81,33 +81,44 @@ async def get_user_info(userid: int):
             status_code=404, detail="User not found in the server.")
 
     activity = {}
-    if member2.activity:
-        activity["type"] = str(member2.activity.type).replace(
-            "ActivityType.", "")
-        match member2.activity.type:
-            case discord.ActivityType.listening:
-                if isinstance(member2.activity, Spotify):
+
+    try:
+        activities = [activity for activity in member2.activities if activity.type !=
+                      discord.ActivityType.custom]
+
+        activities.sort(key=lambda activity: activity.type.value)
+
+        rawActivity = activities[0] if activities else None
+
+        if rawActivity and rawActivity.type:
+            activity["type"] = str(rawActivity.type).replace(
+                "ActivityType.", "")
+            match rawActivity.type:
+                case discord.ActivityType.listening:
+                    if isinstance(rawActivity, Spotify):
+                        activity.update({
+                            "platform": "Spotify",
+                            "name": rawActivity.title,
+                            "artists": rawActivity.artists,
+                            "album": {
+                                "name": rawActivity.album,
+                                "cover": rawActivity.album_cover_url,
+                            },
+                            "timestamps": {
+                                "start": str(rawActivity.start),
+                                "end": str(rawActivity.end),
+                            },
+                        })
+                case _:
                     activity.update({
-                        "platform": "Spotify",
-                        "name": member2.activity.title,
-                        "artists": member2.activity.artists,
-                        "album": {
-                            "name": member2.activity.album,
-                            "cover": member2.activity.album_cover_url,
-                        },
-                        "timestamps": {
-                            "start": str(member2.activity.start),
-                            "end": str(member2.activity.end),
-                        },
+                        "name": rawActivity.name,
+                        "details": rawActivity.details,
+                        "state": rawActivity.state,
+                        "timestamps": rawActivity.timestamps,
+                        "assets": rawActivity.assets,
                     })
-            case _:
-                activity.update({
-                    "name": member2.activity.name,
-                    "details": member2.activity.details,
-                    "state": member2.activity.state,
-                    "timestamps": member2.activity.timestamps,
-                    "assets": member2.activity.assets,
-                })
+    except Exception as e:
+        pass
 
     try:
         user_info = {
