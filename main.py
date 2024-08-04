@@ -81,14 +81,21 @@ async def get_user_info(userid: int):
             status_code=404, detail="User not found in the server.")
 
     activity = {}
+    mood = None
 
     try:
+
         activities = [activity for activity in member2.activities if activity.type !=
                       discord.ActivityType.custom]
 
         activities.sort(key=lambda activity: activity.type.value)
 
-        rawActivity = activities[0] if activities else None
+        print(activities)
+
+        if activities:
+            mood = member2.activity.to_dict(
+            ) if member2.activity.type == discord.ActivityType.custom else None
+            rawActivity = activities[0]
 
         if rawActivity and rawActivity.type:
             activity["type"] = str(rawActivity.type).replace(
@@ -109,9 +116,22 @@ async def get_user_info(userid: int):
                                 "end": str(rawActivity.end),
                             },
                         })
+                case discord.ActivityType.streaming:
+                    activity.update({
+                        "platform": rawActivity.platform,
+                        "details": rawActivity.details,
+                        "game": rawActivity.game,
+                        "twitch_name": rawActivity.twitch_name,
+                        "timestamps": {
+                            "start": str(rawActivity.created_at),
+                        },
+                        "url": rawActivity.url,
+                        "assets": rawActivity.assets
+                    })
                 case _:
                     activity.update({
                         "name": rawActivity.name,
+                        "application_id": str(rawActivity.application_id),
                         "details": rawActivity.details,
                         "state": rawActivity.state,
                         "timestamps": rawActivity.timestamps,
@@ -131,6 +151,7 @@ async def get_user_info(userid: int):
             "accent_color": str(member.accent_color) if member.accent_color else None,
             "created_at": member.created_at.strftime("%m-%d-%Y"),
             "activity": activity if activity else None,
+            "mood": mood,
         }
         return JSONResponse(content=user_info)
     except Exception as e:
