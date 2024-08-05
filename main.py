@@ -90,8 +90,6 @@ async def get_user_info(userid: int):
 
         activities.sort(key=lambda activity: activity.type.value)
 
-        print(activities)
-
         if activities:
             mood = member2.activity.to_dict(
             ) if member2.activity.type == discord.ActivityType.custom else None
