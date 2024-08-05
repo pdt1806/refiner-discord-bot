@@ -84,18 +84,14 @@ async def get_user_info(userid: int):
     mood = None
 
     try:
+        activities = [activity for activity in member2.activities]
+        if activities[0].type == discord.ActivityType.custom:
+            mood = activities[0].to_dict()
+            activities.pop(0)
+        activities.sort(key=lambda activity: activity.type)
+        rawActivity = activities[0]
 
-        activities = [activity for activity in member2.activities if activity.type !=
-                      discord.ActivityType.custom]
-
-        activities.sort(key=lambda activity: activity.type.value)
-
-        if activities:
-            mood = member2.activity.to_dict(
-            ) if member2.activity.type == discord.ActivityType.custom else None
-            rawActivity = activities[0]
-
-        if rawActivity and rawActivity.type:
+        if rawActivity:
             activity["type"] = str(rawActivity.type).replace(
                 "ActivityType.", "")
             match rawActivity.type:
