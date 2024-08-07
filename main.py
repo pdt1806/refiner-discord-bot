@@ -8,7 +8,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 import uvicorn
-from discord import Spotify
 
 
 load_dotenv()
@@ -37,6 +36,7 @@ class Bot(commands.Bot):
 
     async def on_ready(self):
         await self.start_fastapi_server()
+        await bot.change_presence(activity=discord.CustomActivity(name='testing rnnnnnn', emoji=discord.PartialEmoji.from_str("<a:suisei:1270875931476627587>")))
 
     async def start_fastapi_server(self):
         config = uvicorn.Config(app, host="127.0.0.1", port=7000)
@@ -83,12 +83,27 @@ async def get_user_info(userid: int):
     activity = {}
     mood = None
 
+    valid_types = [
+        discord.ActivityType.playing,
+        discord.ActivityType.streaming,
+        discord.ActivityType.listening,
+        discord.ActivityType.watching,
+        discord.ActivityType.competing,
+        discord.ActivityType.custom,
+    ]
+
     try:
-        activities = [activity for activity in member2.activities]
+        activities = [
+            activity for activity in member2.activities if activity.type in valid_types]
+
         if activities[0].type == discord.ActivityType.custom:
             mood = activities[0].to_dict()
+            if mood["emoji"]["id"]:
+                mood["emoji"]["id"] = str(mood["emoji"]["id"])
             activities.pop(0)
+
         activities.sort(key=lambda activity: activity.type)
+
         rawActivity = activities[0]
 
         if rawActivity:
@@ -96,7 +111,7 @@ async def get_user_info(userid: int):
                 "ActivityType.", "")
             match rawActivity.type:
                 case discord.ActivityType.listening:
-                    if isinstance(rawActivity, Spotify):
+                    if isinstance(rawActivity, discord.Spotify):
                         activity.update({
                             "platform": "Spotify",
                             "name": rawActivity.title,
