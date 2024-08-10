@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 import uvicorn
-from utils import valid_types, get_activity_and_mood
+from utils import get_activity_and_mood
 
 
 load_dotenv()
@@ -37,7 +37,6 @@ class Bot(commands.Bot):
 
     async def on_ready(self):
         await self.start_fastapi_server()
-        await bot.change_presence(activity=discord.CustomActivity(name='testing rnnnnnn', emoji=discord.PartialEmoji.from_str("<a:suisei:1270875931476627587>")))
 
     async def start_fastapi_server(self):
         config = uvicorn.Config(app, host="127.0.0.1", port=7000)
