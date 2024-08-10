@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 import uvicorn
+from utils import valid_types, get_activity_and_mood
 
 
 load_dotenv()
@@ -26,7 +27,7 @@ app.add_middleware(
 bot = commands.Bot(intents=discord.Intents.all(),
                    command_prefix='ref!', application_id='1121931862546329631')
 
-# ------------------#
+# ------------------ #
 
 
 class Bot(commands.Bot):
@@ -49,7 +50,7 @@ class Bot(commands.Bot):
             await bot.load_extension(f'cogs.{cog}')
 
 
-# ------------------#
+# ------------------ #
 
 bot = Bot()
 
@@ -64,90 +65,17 @@ async def get_user_info(userid: int):
     if not userid:
         raise HTTPException(status_code=400, detail="ID parameter is missing.")
 
-    try:
-        member = await bot.fetch_user(userid)
-    except discord.NotFound:
-        raise HTTPException(status_code=404, detail="User not found.")
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Internal Server Error: {str(e)}")
-
     guild = bot.guilds[0]
 
     member2 = discord.utils.find(lambda m: m.id == userid, guild.members)
 
-    if not member or not member2:
+    if not member2:
         raise HTTPException(
             status_code=404, detail="User not found in the server.")
 
-    activity = {}
-    mood = None
+    member = await bot.fetch_user(userid)
 
-    valid_types = [
-        discord.ActivityType.playing,
-        discord.ActivityType.streaming,
-        discord.ActivityType.listening,
-        discord.ActivityType.watching,
-        discord.ActivityType.competing,
-        discord.ActivityType.custom,
-    ]
-
-    try:
-        activities = [
-            activity for activity in member2.activities if activity.type in valid_types]
-
-        if activities[0].type == discord.ActivityType.custom:
-            mood = activities[0].to_dict()
-            if mood["emoji"]["id"]:
-                mood["emoji"]["id"] = str(mood["emoji"]["id"])
-            activities.pop(0)
-
-        activities.sort(key=lambda activity: activity.type)
-
-        rawActivity = activities[0]
-
-        if rawActivity:
-            activity["type"] = str(rawActivity.type).replace(
-                "ActivityType.", "")
-            match rawActivity.type:
-                case discord.ActivityType.listening:
-                    if isinstance(rawActivity, discord.Spotify):
-                        activity.update({
-                            "platform": "Spotify",
-                            "name": rawActivity.title,
-                            "artists": rawActivity.artists,
-                            "album": {
-                                "name": rawActivity.album,
-                                "cover": rawActivity.album_cover_url,
-                            },
-                            "timestamps": {
-                                "start": str(rawActivity.start),
-                                "end": str(rawActivity.end),
-                            },
-                        })
-                case discord.ActivityType.streaming:
-                    activity.update({
-                        "platform": rawActivity.platform,
-                        "details": rawActivity.details,
-                        "game": rawActivity.game,
-                        "twitch_name": rawActivity.twitch_name,
-                        "timestamps": {
-                            "start": str(rawActivity.created_at),
-                        },
-                        "url": rawActivity.url,
-                        "assets": rawActivity.assets
-                    })
-                case _:
-                    activity.update({
-                        "name": rawActivity.name,
-                        "application_id": str(rawActivity.application_id),
-                        "details": rawActivity.details,
-                        "state": rawActivity.state,
-                        "timestamps": rawActivity.timestamps,
-                        "assets": rawActivity.assets,
-                    })
-    except Exception as e:
-        pass
+    activity, mood = get_activity_and_mood(member2.activities)
 
     try:
         user_info = {
@@ -159,7 +87,7 @@ async def get_user_info(userid: int):
             "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
             "accent_color": str(member.accent_color) if member.accent_color else None,
             "created_at": member.created_at.strftime("%m-%d-%Y"),
-            "activity": activity if activity else None,
+            "activity": activity,
             "mood": mood,
         }
         return JSONResponse(content=user_info)
