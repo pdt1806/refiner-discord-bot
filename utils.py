@@ -17,7 +17,6 @@ valid_types = [
 
 
 def get_activity_and_mood(member_activities: Tuple[ActivityTypes, ...]):
-    print(member_activities)
     try:
         activity, mood, rawActivity = {}, None, None
 
@@ -76,5 +75,4 @@ def get_activity_and_mood(member_activities: Tuple[ActivityTypes, ...]):
                     })
         return activity if activity else None, mood
     except Exception as e:
-        print(e)
         return None, None
