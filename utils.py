@@ -25,7 +25,7 @@ def get_activity_and_mood(member_activities: Tuple[ActivityTypes, ...]):
 
         if activities[0].type == discord.ActivityType.custom:
             mood = activities[0].to_dict()
-            if mood["emoji"]["id"]:
+            if activities[0].emoji and activities[0].emoji.is_custom_emoji():
                 mood["emoji"]["id"] = str(mood["emoji"]["id"])
             activities.pop(0)
 
