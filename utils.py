@@ -52,6 +52,14 @@ def get_activity_and_mood(member_activities: Tuple[ActivityTypes, ...]):
                                 "end": str(rawActivity.end),
                             },
                         })
+                    else:
+                        activity.update({
+                            "name": rawActivity.name,
+                            "details": rawActivity.details,
+                            "state": rawActivity.state,
+                            "timestamps": rawActivity.timestamps,
+                            "assets": rawActivity.assets,
+                        })
                 case discord.ActivityType.streaming:
                     activity.update({
                         "platform": rawActivity.platform,
