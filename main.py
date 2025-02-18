@@ -19,6 +19,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["https://disi.bennynguyen.dev"],
+    # allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -81,7 +82,7 @@ async def get_user_info(userid: int):
             "id": str(member.id),
             "username": member.name,
             "display_name": member.display_name,
-            "avatar": member.avatar.url if member.avatar else member.default_avatar.url if member.default_avatar else None,
+            "avatar": member.avatar.url.replace("size=1024", "size=512") if member.avatar else member.default_avatar.url if member.default_avatar else None,
             "status": str(member2.status[0]),
             "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
             "accent_color": str(member.accent_color) if member.accent_color else None,
