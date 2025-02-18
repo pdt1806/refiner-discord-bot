@@ -8,7 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 import uvicorn
-from utils import get_activity_and_mood
+from utils import extract_urls, get_activity_and_mood
+import asyncio
 
 
 load_dotenv()
@@ -52,6 +53,7 @@ class Bot(commands.Bot):
 
 # ------------------ #
 
+
 bot = Bot()
 
 
@@ -61,21 +63,29 @@ def home():
 
 
 @app.get("/user/{userid}")
-async def get_user_info(userid: int):
+async def get_user_info(userid: int, full: str = "false"):
     if not userid:
         raise HTTPException(status_code=400, detail="ID parameter is missing.")
+    if full.lower() not in ["true", "false"]:
+        raise HTTPException(
+            status_code=400, detail="Full parameter must be either 'true' or 'false'.")
+    fullRequired = full.lower() == "true"
 
     guild = bot.guilds[0]
 
-    member2 = discord.utils.find(lambda m: m.id == userid, guild.members)
+    member_short = discord.utils.find(lambda m: m.id == userid, guild.members)
 
-    if not member2:
+    if not member_short:
         raise HTTPException(
             status_code=404, detail="User not found in the server.")
 
-    member = await bot.fetch_user(userid)
+    member = await bot.fetch_user(userid) if fullRequired else member_short
 
-    activity, mood = get_activity_and_mood(member2.activities)
+    activity, mood = get_activity_and_mood(member_short.activities)
+
+    # The followings require full data (which means longer time, about 150-200ms):
+    #     - accent_color
+    #     - banner
 
     try:
         user_info = {
@@ -83,13 +93,26 @@ async def get_user_info(userid: int):
             "username": member.name,
             "display_name": member.display_name,
             "avatar": member.avatar.url.replace("size=1024", "size=512") if member.avatar else member.default_avatar.url if member.default_avatar else None,
-            "status": str(member2.status[0]),
+            "status": str(member_short.status[0]),
             "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
             "accent_color": str(member.accent_color) if member.accent_color else None,
             "created_at": member.created_at.strftime("%m-%d-%Y"),
             "activity": activity,
             "mood": mood,
+        } if fullRequired else {
+            "id": str(member_short.id),
+            "username": member_short.name,
+            "display_name": member_short.display_name,
+            "avatar": member_short.avatar.url.replace("size=1024", "size=512") if member_short.avatar else member_short.default_avatar.url if member_short.default_avatar else None,
+            "status": str(member_short.status[0]),
+            "created_at": member_short.created_at.strftime("%m-%d-%Y"),
+            "activity": activity,
+            "mood": mood,
         }
+
+        urls = extract_urls(user_info)
+        user_info["urls"] = urls
+
         return JSONResponse(content=user_info)
     except Exception as e:
         raise HTTPException(
@@ -111,6 +134,14 @@ def get_id(username: str):
             status_code=404, detail="User not found in the server.")
 
     return {"id": str(member.id)}
+
+
+@app.get("/all_ids")
+def get_all_ids():
+
+    guild = bot.guilds[0]
+    members = guild.members
+    return {"ids": [str(member.id) for member in members]}
 
 
 async def run_bot():

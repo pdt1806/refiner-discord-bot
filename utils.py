@@ -1,6 +1,8 @@
+import re
 from typing import Tuple, Union
 import discord
 from discord import Activity, Game, CustomActivity, Streaming, Spotify
+
 
 ActivityTypes = Union[Activity, Game, CustomActivity, Streaming, Spotify]
 
@@ -84,3 +86,23 @@ def get_activity_and_mood(member_activities: Tuple[ActivityTypes, ...]):
         return activity if activity else None, mood
     except Exception as e:
         return None, None
+
+
+def extract_urls(data):
+    urls = []
+    url_pattern = re.compile(r'https?://[^\s\'",]+')
+
+    # Recursive function to handle nested structures
+    def recurse(item):
+        if isinstance(item, str):
+            urls.extend(url_pattern.findall(item))
+        elif isinstance(item, (list, tuple, set)):
+            for sub_item in item:
+                recurse(sub_item)
+        elif isinstance(item, dict):
+            for key, value in item.items():
+                recurse(key)
+                recurse(value)
+
+    recurse(data)
+    return urls
