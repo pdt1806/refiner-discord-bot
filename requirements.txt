@@ -5,3 +5,4 @@ dnspython
 python-dotenv
 fastapi
 uvicorn
+slowapi

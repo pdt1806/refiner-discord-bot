@@ -3,18 +3,23 @@ import asyncio
 from discord.ext import commands
 from dotenv import load_dotenv
 import os
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 import uvicorn
 from utils import extract_urls, get_activity_and_mood
 import asyncio
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 
 load_dotenv()
 
 TOKEN = os.environ['TOKEN']
+RESTRICTED_IDS = [id for id in os.environ['RESTRICTED_IDS'].split(",")]
+
 
 app = FastAPI()
 app.add_middleware(
@@ -25,6 +30,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 bot = commands.Bot(intents=discord.Intents.all(),
                    command_prefix='ref!', application_id='1121931862546329631')
@@ -63,12 +72,13 @@ def home():
 
 
 @app.get("/user/{userid}")
-async def get_user_info(userid: int, full: str = "false"):
+@limiter.limit("20/minute")
+async def get_user_info(request: Request, userid: int, full: str = "false"):
     if not userid:
         raise HTTPException(status_code=400, detail="ID parameter is missing.")
-    if full.lower() not in ["true", "false"]:
+    if userid in RESTRICTED_IDS:
         raise HTTPException(
-            status_code=400, detail="Full parameter must be either 'true' or 'false'.")
+            status_code=403, detail="This user is being restricted from accessing the API.")
     fullRequired = full.lower() == "true"
 
     guild = bot.guilds[0]
@@ -120,7 +130,8 @@ async def get_user_info(userid: int, full: str = "false"):
 
 
 @app.get("/username/{username}")
-def get_id(username: str):
+@limiter.limit("20/minute")
+def get_id(request: Request, username: str):
     if not username:
         raise HTTPException(
             status_code=400, detail="Username parameter is missing.")
