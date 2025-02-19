@@ -18,7 +18,6 @@ from slowapi.errors import RateLimitExceeded
 load_dotenv()
 
 TOKEN = os.environ['TOKEN']
-RESTRICTED_IDS = [id for id in os.environ['RESTRICTED_IDS'].split(",")]
 
 
 app = FastAPI()
@@ -72,30 +71,30 @@ def home():
 
 
 @app.get("/user/{userid}")
-@limiter.limit("20/minute")
-async def get_user_info(request: Request, userid: int, full: str = "false"):
+@limiter.limit("60/minute")
+async def get_user_info(request: Request, userid: str, full: str = "false"):
     if not userid:
         raise HTTPException(status_code=400, detail="ID parameter is missing.")
-    if userid in RESTRICTED_IDS:
-        raise HTTPException(
-            status_code=403, detail="This user is being restricted from accessing the API.")
     fullRequired = full.lower() == "true"
 
     guild = bot.guilds[0]
 
-    member_short = discord.utils.find(lambda m: m.id == userid, guild.members)
+    member_short = discord.utils.find(
+        lambda m: str(m.id) == userid, guild.members)
 
     if not member_short:
         raise HTTPException(
             status_code=404, detail="User not found in the server.")
-
-    member = await bot.fetch_user(userid) if fullRequired else member_short
 
     activity, mood = get_activity_and_mood(member_short.activities)
 
     # The followings require full data (which means longer time, about 150-200ms):
     #     - accent_color
     #     - banner
+
+    member = await bot.fetch_user(userid) if fullRequired else None
+
+    # Full data => fetch_user => Discord API => 150-200ms
 
     try:
         user_info = {
@@ -130,7 +129,7 @@ async def get_user_info(request: Request, userid: int, full: str = "false"):
 
 
 @app.get("/username/{username}")
-@limiter.limit("20/minute")
+@limiter.limit("5/minute")
 def get_id(request: Request, username: str):
     if not username:
         raise HTTPException(
@@ -145,14 +144,6 @@ def get_id(request: Request, username: str):
             status_code=404, detail="User not found in the server.")
 
     return {"id": str(member.id)}
-
-
-@app.get("/all_ids")
-def get_all_ids():
-
-    guild = bot.guilds[0]
-    members = guild.members
-    return {"ids": [str(member.id) for member in members]}
 
 
 async def run_bot():
