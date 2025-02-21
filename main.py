@@ -23,8 +23,8 @@ TOKEN = os.environ['TOKEN']
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://disi.bennynguyen.dev"],
-    # allow_origins=["*"],
+    allow_origins=["https://disi.bennynguyen.dev",
+                   "http://localhost:5173", "http://localhost:1911"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
