@@ -70,17 +70,17 @@ def home():
     return {"message": "API of Refiner Discord Bot"}
 
 
-@app.get("/user/{userid}")
+@app.get("/user/{id}")
 @limiter.limit("60/minute")
-async def get_user_info(request: Request, userid: str, full: str = "false"):
-    if not userid:
+async def get_user_info(request: Request, id: str, full: str = "false"):
+    if not id:
         raise HTTPException(status_code=400, detail="ID parameter is missing.")
-    fullRequired = full.lower() == "true"
+    full_required = full.lower() == "true"
 
     guild = bot.guilds[0]
 
     member_short = discord.utils.find(
-        lambda m: str(m.id) == userid, guild.members)
+        lambda m: str(m.id) == id, guild.members)
 
     if not member_short:
         raise HTTPException(
@@ -88,36 +88,35 @@ async def get_user_info(request: Request, userid: str, full: str = "false"):
 
     activity, mood = get_activity_and_mood(member_short.activities)
 
-    # The followings require full data (which means longer time, about 150-200ms):
-    #     - accent_color
-    #     - banner
-
-    member = await bot.fetch_user(userid) if fullRequired else None
-
-    # Full data => fetch_user => Discord API => 150-200ms
+    badges = [badge.name for badge in member_short.public_flags.all()]
 
     try:
         user_info = {
-            "id": str(member.id),
-            "username": member.name,
-            "display_name": member.display_name,
-            "avatar": member.avatar.url.replace("size=1024", "size=512") if member.avatar else member.default_avatar.url if member.default_avatar else None,
-            "status": str(member_short.status[0]),
-            "banner": member.banner.url.replace("size=512", "size=1024") if member.banner else None,
-            "accent_color": str(member.accent_color) if member.accent_color else None,
-            "created_at": member.created_at.strftime("%m-%d-%Y"),
-            "activity": activity,
-            "mood": mood,
-        } if fullRequired else {
             "id": str(member_short.id),
             "username": member_short.name,
             "display_name": member_short.display_name,
             "avatar": member_short.avatar.url.replace("size=1024", "size=512") if member_short.avatar else member_short.default_avatar.url if member_short.default_avatar else None,
-            "status": str(member_short.status[0]),
+            "status": member_short.raw_status,
             "created_at": member_short.created_at.strftime("%m-%d-%Y"),
             "activity": activity,
             "mood": mood,
+            "avatar_decoration": str(member_short.avatar_decoration) if member_short.avatar_decoration else None,
+            "badges": badges,
         }
+
+        if full_required:
+            # The followings require full data (which means longer time, about 150-200ms):
+            #     - accent_color
+            #     - banner
+
+            member = await bot.fetch_user(id)
+
+            # Full data => fetch_user => Discord API => 150-200ms
+
+            user_info["banner"] = member.banner.url.replace(
+                "size=512", "size=1024") if member.banner else None
+            user_info["accent_color"] = str(
+                member.accent_color) if member.accent_color else None
 
         urls = extract_urls(user_info)
         user_info["urls"] = urls
