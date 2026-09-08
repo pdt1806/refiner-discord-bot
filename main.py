@@ -14,16 +14,14 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-
 load_dotenv()
 
 TOKEN = os.environ['TOKEN']
 
-
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://disi.bennynguyen.dev",
+    allow_origins=["https://disi.bennynguyen.dev", "https://disi.fyi",
                    "http://localhost:5173", "http://localhost:1911"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -72,10 +70,13 @@ def home():
 
 @app.get("/user/{id}")
 @limiter.limit("60/minute")
-async def get_user_info(request: Request, id: str, full: str = "false"):
+async def get_user_info(request: Request, id: str, full: str = "false", extend: str = ""):
     if not id:
         raise HTTPException(status_code=400, detail="ID parameter is missing.")
     full_required = full.lower() == "true"
+
+    extended_keys = [key.strip()
+                     for key in extend.split(',')] if extend else []
 
     guild = bot.guilds[0]
 
@@ -88,21 +89,32 @@ async def get_user_info(request: Request, id: str, full: str = "false"):
 
     activity, mood = get_activity_and_mood(member_short.activities)
 
-    badges = [badge.name for badge in member_short.public_flags.all()]
+    primary_guild = {
+        "badge": member_short.primary_guild.badge.url,
+        "tag": member_short.primary_guild.tag,
+    } if member_short.primary_guild and member_short.primary_guild.tag != None else None
 
     try:
         user_info = {
             "id": str(member_short.id),
             "username": member_short.name,
             "display_name": member_short.display_name,
-            "avatar": member_short.avatar.url.replace("size=1024", "size=512") if member_short.avatar else member_short.default_avatar.url if member_short.default_avatar else None,
+            "avatar": member_short.avatar.url.replace("size=1024", "size=256") if member_short.avatar else member_short.default_avatar.url if member_short.default_avatar else None,
             "status": member_short.raw_status,
             "created_at": member_short.created_at.strftime("%m-%d-%Y"),
-            "activity": activity,
             "mood": mood,
-            "avatar_decoration": str(member_short.avatar_decoration) if member_short.avatar_decoration else None,
-            "badges": badges,
+            "public_flags": [flag.name for flag in member_short.public_flags.all()] if member_short.public_flags else None,
         }
+
+        if ("primaryGuild" in extended_keys):
+            user_info["primary_guild"] = primary_guild
+
+        if ("avatarDecoration" in extended_keys):
+            user_info["avatar_decoration"] = str(
+                member_short.avatar_decoration) if member_short.avatar_decoration else None
+
+        if ("activity" in extended_keys):
+            user_info["activity"] = activity
 
         if full_required:
             # The followings require full data (which means longer time, about 150-200ms):

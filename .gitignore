@@ -1,4 +1,5 @@
 .env
 __pycache__
 refiner-venv/
+refiner-venv-wsl/
 .vscode/

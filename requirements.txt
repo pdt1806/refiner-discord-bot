@@ -1,7 +1,5 @@
 discord.py
-waifuim.py
 asyncio
-dnspython
 python-dotenv
 fastapi
 uvicorn
