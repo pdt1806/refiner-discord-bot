@@ -1,6 +1,0 @@
-discord.py
-asyncio
-python-dotenv
-fastapi
-uvicorn
-slowapi

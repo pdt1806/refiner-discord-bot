@@ -1,7 +1,4 @@
 .env
 __pycache__
-refiner-venv/
-refiner-venv-wsl/
-refiner-venv-vps1/
-refiner-venv-windows/
 .vscode/
+.venv/
