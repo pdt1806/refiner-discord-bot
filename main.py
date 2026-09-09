@@ -99,7 +99,7 @@ async def get_user_info(request: Request, id: str, full: str = "false", extend: 
             "id": str(member_short.id),
             "username": member_short.name,
             "display_name": member_short.display_name,
-            "avatar": member_short.avatar.url.replace("size=1024", "size=256") if member_short.avatar else member_short.default_avatar.url if member_short.default_avatar else None,
+            "avatar": member_short.avatar.url.replace("size=1024", "size=512") if member_short.avatar else member_short.default_avatar.url if member_short.default_avatar else None,
             "status": member_short.raw_status,
             "created_at": member_short.created_at.strftime("%m-%d-%Y"),
             "mood": mood,
