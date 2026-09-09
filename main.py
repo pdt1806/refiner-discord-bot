@@ -16,13 +16,17 @@ from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
-TOKEN = os.environ['TOKEN']
+TOKEN = os.environ["TOKEN"]
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://disi.bennynguyen.dev", "https://disi.fyi",
-                   "http://localhost:5173", "http://localhost:1911"],
+    allow_origins=[
+        "https://disi.bennynguyen.dev",
+        "https://disi.fyi",
+        "http://localhost:5173",
+        "http://localhost:1911",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,16 +36,18 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-bot = commands.Bot(intents=discord.Intents.all(),
-                   command_prefix='ref!', application_id='1121931862546329631')
+bot = commands.Bot(
+    intents=discord.Intents.all(),
+    command_prefix="ref!",
+    application_id="1121931862546329631",
+)
 
 # ------------------ #
 
 
 class Bot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix='ref!', intents=discord.Intents.all())
-        self.cogslist = ['waifu']
+        super().__init__(command_prefix="ref!", intents=discord.Intents.all())
 
     async def on_ready(self):
         await self.start_fastapi_server()
@@ -51,10 +57,6 @@ class Bot(commands.Bot):
         server = uvicorn.Server(config)
         loop = asyncio.get_event_loop()
         loop.create_task(server.serve())
-
-    async def load(self):
-        for cog in self.cogslist:
-            await bot.load_extension(f'cogs.{cog}')
 
 
 # ------------------ #
@@ -70,50 +72,68 @@ def home():
 
 @app.get("/user/{id}")
 @limiter.limit("60/minute")
-async def get_user_info(request: Request, id: str, full: str = "false", extend: str = ""):
+async def get_user_info(
+    request: Request, id: str, full: str = "false", extend: str = ""
+):
     if not id:
         raise HTTPException(status_code=400, detail="ID parameter is missing.")
     full_required = full.lower() == "true"
 
-    extended_keys = [key.strip()
-                     for key in extend.split(',')] if extend else []
+    extended_keys = [key.strip() for key in extend.split(",")] if extend else []
 
     guild = bot.guilds[0]
 
-    member_short = discord.utils.find(
-        lambda m: str(m.id) == id, guild.members)
+    member_short = discord.utils.find(lambda m: str(m.id) == id, guild.members)
 
     if not member_short:
-        raise HTTPException(
-            status_code=404, detail="User not found in the server.")
+        raise HTTPException(status_code=404, detail="User not found in the server.")
 
     activity, mood = get_activity_and_mood(member_short.activities)
 
-    primary_guild = {
-        "badge": member_short.primary_guild.badge.url,
-        "tag": member_short.primary_guild.tag,
-    } if member_short.primary_guild and member_short.primary_guild.tag != None else None
+    primary_guild = (
+        {
+            "badge": member_short.primary_guild.badge.url,
+            "tag": member_short.primary_guild.tag,
+        }
+        if member_short.primary_guild and member_short.primary_guild.tag != None
+        else None
+    )
 
     try:
         user_info = {
             "id": str(member_short.id),
             "username": member_short.name,
             "display_name": member_short.display_name,
-            "avatar": member_short.avatar.url.replace("size=1024", "size=512") if member_short.avatar else member_short.default_avatar.url if member_short.default_avatar else None,
+            "avatar": (
+                member_short.avatar.url.replace("size=1024", "size=512")
+                if member_short.avatar
+                else (
+                    member_short.default_avatar.url
+                    if member_short.default_avatar
+                    else None
+                )
+            ),
             "status": member_short.raw_status,
             "created_at": member_short.created_at.strftime("%m-%d-%Y"),
             "mood": mood,
-            "public_flags": [flag.name for flag in member_short.public_flags.all()] if member_short.public_flags else None,
+            "public_flags": (
+                [flag.name for flag in member_short.public_flags.all()]
+                if member_short.public_flags
+                else None
+            ),
         }
 
-        if ("primaryGuild" in extended_keys):
+        if "primaryGuild" in extended_keys:
             user_info["primary_guild"] = primary_guild
 
-        if ("avatarDecoration" in extended_keys):
-            user_info["avatar_decoration"] = str(
-                member_short.avatar_decoration) if member_short.avatar_decoration else None
+        if "avatarDecoration" in extended_keys:
+            user_info["avatar_decoration"] = (
+                str(member_short.avatar_decoration)
+                if member_short.avatar_decoration
+                else None
+            )
 
-        if ("activity" in extended_keys):
+        if "activity" in extended_keys:
             user_info["activity"] = activity
 
         if full_required:
@@ -121,46 +141,46 @@ async def get_user_info(request: Request, id: str, full: str = "false", extend: 
             #     - accent_color
             #     - banner
 
-            member = await bot.fetch_user(id)
-
             # Full data => fetch_user => Discord API => 150-200ms
 
-            user_info["banner"] = member.banner.url.replace(
-                "size=512", "size=1024") if member.banner else None
-            user_info["accent_color"] = str(
-                member.accent_color) if member.accent_color else None
+            member = await bot.fetch_user(id)
+
+            user_info["banner"] = (
+                member.banner.url.replace("size=512", "size=1024")
+                if member.banner
+                else None
+            )
+            user_info["accent_color"] = (
+                str(member.accent_color) if member.accent_color else None
+            )
 
         urls = extract_urls(user_info)
         user_info["urls"] = urls
 
         return JSONResponse(content=user_info)
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Internal Server Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 
 @app.get("/username/{username}")
 @limiter.limit("5/minute")
 def get_id(request: Request, username: str):
     if not username:
-        raise HTTPException(
-            status_code=400, detail="Username parameter is missing.")
+        raise HTTPException(status_code=400, detail="Username parameter is missing.")
 
     guild = bot.guilds[0]
 
     member = discord.utils.find(lambda m: m.name == username, guild.members)
 
     if not member:
-        raise HTTPException(
-            status_code=404, detail="User not found in the server.")
+        raise HTTPException(status_code=404, detail="User not found in the server.")
 
     return {"id": str(member.id)}
 
 
 async def run_bot():
-    await bot.load()
     await bot.start(TOKEN)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     asyncio.run(run_bot())
