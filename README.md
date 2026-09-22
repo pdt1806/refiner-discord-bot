@@ -12,9 +12,24 @@ Why Refiner? I mean, why not? (￣ ▽ ￣)ノ She is the Greatest Mage of All T
 
 <img width="30%" style="min-width: 250px" src="https://raw.githubusercontent.com/pdt1806/refiner-discord-bot/main/public/refiner.gif" />
 
-## "Can I use this bot?"
+## Local Development Setup
 
-Unfortunately, no. This bot is only for personal use (she's mine), and I don't have any plan to make it public. However, you can use Refiner as a reference to make your own bot, although she only has 1 spell (￣ ▽ ￣\*)ゞ (and some hidden spells).
+### Prerequisites
+
+- A registered [Discord Bot Token](https://discord.com/developers/applications)
+- [Python](https://www.python.org/) (>=3.12)
+- [uv](https://docs.astral.sh/uv/)
+
+### Environment Variables
+
+1. Locate the `.env.example` file in the repository and duplicate it. Rename the duplicated file to `.env`.
+2. Open the new `.env` file and populate it with your specific `APP_ID` and `TOKEN`.
+
+### Start the Application
+
+```bash
+uv run main.py
+```
 
 ## Technologies
 

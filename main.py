@@ -16,6 +16,7 @@ from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
 
+APP_ID = os.environ["APP_ID"]
 TOKEN = os.environ["TOKEN"]
 
 app = FastAPI()
@@ -39,7 +40,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 bot = commands.Bot(
     intents=discord.Intents.all(),
     command_prefix="ref!",
-    application_id="1121931862546329631",
+    application_id=APP_ID,
 )
 
 # ------------------ #
