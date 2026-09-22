@@ -31,6 +31,8 @@ Why Refiner? I mean, why not? (￣ ▽ ￣)ノ She is the Greatest Mage of All T
 uv run main.py
 ```
 
+The application is now running on `127.0.0.1:7000`.
+
 ## Technologies
 
 - [discord.py](https://discordpy.readthedocs.io/en/stable/)
