@@ -31,7 +31,26 @@ Why Refiner? I mean, why not? (￣ ▽ ￣)ノ She is the Greatest Mage of All T
 uv run main.py
 ```
 
-The application is now running on `127.0.0.1:7000`.
+The application is now running on `localhost:8010`.
+
+## Command-Line Flags
+
+| Flag | Long Flag | Type  | Default | Description                                   |
+| :--- | :-------- | :---- | :------ | :-------------------------------------------- |
+| `-p` | `--port`  | `int` | `8010`  | The port for the FastAPI server to listen on. |
+
+#### Usage Examples
+
+```bash
+# Run on the default port (8010)
+python main.py
+
+# Run on a custom port using the short flag
+python main.py -p 7001
+
+# Run on a custom port using the long flag
+python main.py --port 7001
+```
 
 ## Technologies
 

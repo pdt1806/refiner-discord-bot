@@ -13,6 +13,7 @@ import asyncio
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import argparse
 
 load_dotenv()
 
@@ -43,6 +44,16 @@ bot = commands.Bot(
     application_id=APP_ID,
 )
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run the Refiner Discord Bot and FastAPI server.")
+    parser.add_argument(
+        "-p", "--port",
+        type=int,
+        default=8010,
+        help="The port for the FastAPI server to listen on (default: 8010)"
+    )
+    return parser.parse_args()
+
 # ------------------ #
 
 
@@ -51,10 +62,11 @@ class Bot(commands.Bot):
         super().__init__(command_prefix="ref!", intents=discord.Intents.all())
 
     async def on_ready(self):
-        await self.start_fastapi_server()
+        args = parse_args()
+        await self.start_fastapi_server(port=args.port)
 
-    async def start_fastapi_server(self):
-        config = uvicorn.Config(app, host="127.0.0.1", port=7000)
+    async def start_fastapi_server(self, port = 8010):
+        config = uvicorn.Config(app, host="localhost", port=port)
         server = uvicorn.Server(config)
         loop = asyncio.get_event_loop()
         loop.create_task(server.serve())

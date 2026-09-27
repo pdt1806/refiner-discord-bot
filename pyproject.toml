@@ -3,6 +3,7 @@ name = "refiner-discord-bot"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "argparse>=1.4.0",
     "asyncio>=4.0.0",
     "discord-py>=2.7.1",
     "fastapi>=0.141.1",
