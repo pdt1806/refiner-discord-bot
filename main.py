@@ -1,26 +1,38 @@
-import discord
 import asyncio
+import os
+from contextlib import asynccontextmanager
+
+import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi import HTTPException
-import uvicorn
-from utils import extract_urls, get_activity_and_mood
-import asyncio
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-import argparse
+from slowapi.util import get_remote_address
+
+from utils import extract_urls, get_activity_and_mood
+
+# ------------------ #
 
 load_dotenv()
 
 APP_ID = os.environ["APP_ID"]
 TOKEN = os.environ["TOKEN"]
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    bot_task = asyncio.create_task(bot.start(TOKEN))
+    yield
+    # cleanly shut down the Discord bot when Uvicorn stops
+    await bot.close()
+    bot_task.cancel()
+
+
+app = FastAPI(lifespan=lifespan)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -38,44 +50,23 @@ limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-bot = commands.Bot(
-    intents=discord.Intents.all(),
-    command_prefix="ref!",
-    application_id=APP_ID,
-)
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Run the Refiner Discord Bot and FastAPI server.")
-    parser.add_argument(
-        "-p", "--port",
-        type=int,
-        default=8010,
-        help="The port for the FastAPI server to listen on (default: 8010)"
-    )
-    return parser.parse_args()
 
 # ------------------ #
 
 
 class Bot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="ref!", intents=discord.Intents.all())
-
-    async def on_ready(self):
-        args = parse_args()
-        await self.start_fastapi_server(port=args.port)
-
-    async def start_fastapi_server(self, port = 8010):
-        config = uvicorn.Config(app, host="localhost", port=port)
-        server = uvicorn.Server(config)
-        loop = asyncio.get_event_loop()
-        loop.create_task(server.serve())
-
-
-# ------------------ #
+        super().__init__(
+            command_prefix="ref!",
+            intents=discord.Intents.all(),
+            application_id=APP_ID,
+        )
 
 
 bot = Bot()
+
+
+# ------------------ #
 
 
 @app.get("/")
@@ -171,8 +162,8 @@ async def get_user_info(
         user_info["urls"] = urls
 
         return JSONResponse(content=user_info)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {e!s}")
 
 
 @app.get("/username/{username}")
@@ -189,11 +180,3 @@ def get_id(request: Request, username: str):
         raise HTTPException(status_code=404, detail="User not found in the server.")
 
     return {"id": str(member.id)}
-
-
-async def run_bot():
-    await bot.start(TOKEN)
-
-
-if __name__ == "__main__":
-    asyncio.run(run_bot())

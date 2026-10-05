@@ -1,12 +1,11 @@
 import re
-from typing import Tuple, Union
+
 import discord
-from discord import Activity, Game, CustomActivity, Streaming, Spotify
-
-
-ActivityTypes = Union[Activity, Game, CustomActivity, Streaming, Spotify]
+from discord import Activity, CustomActivity, Game, Spotify, Streaming
 
 # ------------------ #
+
+ActivityTypes = Activity | Game | CustomActivity | Streaming | Spotify
 
 valid_types = [
     discord.ActivityType.playing,
@@ -17,13 +16,16 @@ valid_types = [
     discord.ActivityType.custom,
 ]
 
+# ------------------ #
 
-def get_activity_and_mood(member_activities: Tuple[ActivityTypes, ...]):
+
+def get_activity_and_mood(member_activities: tuple[ActivityTypes, ...]):
     try:
         activity_to_be_returned, mood, main_activity = {}, None, None
 
         activities = [
-            activity for activity in member_activities if activity.type in valid_types]
+            activity for activity in member_activities if activity.type in valid_types
+        ]
 
         if activities[0].type == discord.ActivityType.custom:
             mood = activities[0].to_dict()
@@ -37,54 +39,63 @@ def get_activity_and_mood(member_activities: Tuple[ActivityTypes, ...]):
 
         if main_activity:
             activity_to_be_returned["type"] = str(main_activity.type).replace(
-                "ActivityType.", "")
+                "ActivityType.", ""
+            )
             match main_activity.type:
                 case discord.ActivityType.listening:
                     if isinstance(main_activity, discord.Spotify):
-                        activity_to_be_returned.update({
-                            "platform": "Spotify",
-                            "name": main_activity.title,
-                            "artists": main_activity.artists,
-                            "album": {
-                                "name": main_activity.album,
-                                "cover": main_activity.album_cover_url,
-                            },
-                            "timestamps": {
-                                "start": str(main_activity.start),
-                                "end": str(main_activity.end),
-                            },
-                        })
+                        activity_to_be_returned.update(
+                            {
+                                "platform": "Spotify",
+                                "name": main_activity.title,
+                                "artists": main_activity.artists,
+                                "album": {
+                                    "name": main_activity.album,
+                                    "cover": main_activity.album_cover_url,
+                                },
+                                "timestamps": {
+                                    "start": str(main_activity.start),
+                                    "end": str(main_activity.end),
+                                },
+                            }
+                        )
                     else:
-                        activity_to_be_returned.update({
+                        activity_to_be_returned.update(
+                            {
+                                "name": main_activity.name,
+                                "details": main_activity.details,
+                                "state": main_activity.state,
+                                "timestamps": main_activity.timestamps,
+                                "assets": main_activity.assets,
+                            }
+                        )
+                case discord.ActivityType.streaming:
+                    activity_to_be_returned.update(
+                        {
+                            "platform": main_activity.platform,
+                            "details": main_activity.details,
+                            "game": main_activity.game,
+                            "twitch_name": main_activity.twitch_name,
+                            "timestamps": {
+                                "start": str(main_activity.created_at),
+                            },
+                            "url": main_activity.url,
+                            "assets": main_activity.assets,
+                        }
+                    )
+                case _:
+                    activity_to_be_returned.update(
+                        {
                             "name": main_activity.name,
+                            "application_id": str(main_activity.application_id),
                             "details": main_activity.details,
                             "state": main_activity.state,
                             "timestamps": main_activity.timestamps,
                             "assets": main_activity.assets,
-                        })
-                case discord.ActivityType.streaming:
-                    activity_to_be_returned.update({
-                        "platform": main_activity.platform,
-                        "details": main_activity.details,
-                        "game": main_activity.game,
-                        "twitch_name": main_activity.twitch_name,
-                        "timestamps": {
-                            "start": str(main_activity.created_at),
-                        },
-                        "url": main_activity.url,
-                        "assets": main_activity.assets
-                    })
-                case _:
-                    activity_to_be_returned.update({
-                        "name": main_activity.name,
-                        "application_id": str(main_activity.application_id),
-                        "details": main_activity.details,
-                        "state": main_activity.state,
-                        "timestamps": main_activity.timestamps,
-                        "assets": main_activity.assets,
-                    })
+                        }
+                    )
         return activity_to_be_returned if activity_to_be_returned else None, mood
-    except Exception as e:
+    except Exception:  # noqa: BLE001
         return None, None
 
 

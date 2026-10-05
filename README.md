@@ -28,29 +28,14 @@ Why Refiner? I mean, why not? (￣ ▽ ￣)ノ She is the Greatest Mage of All T
 ### Start the Application
 
 ```bash
-uv run main.py
+# Default uvicorn port: 8000
+uv run uvicorn main:app --port 8010
+
+# For hot reload
+uv run uvicorn main:app --port 8010 --reload
 ```
 
-The application is now running on `localhost:8010`.
-
-## Command-Line Flags
-
-| Flag | Long Flag | Type  | Default | Description                                   |
-| :--- | :-------- | :---- | :------ | :-------------------------------------------- |
-| `-p` | `--port`  | `int` | `8010`  | The port for the FastAPI server to listen on. |
-
-#### Usage Examples
-
-```bash
-# Run on the default port (8010)
-python main.py
-
-# Run on a custom port using the short flag
-python main.py -p 7001
-
-# Run on a custom port using the long flag
-python main.py --port 7001
-```
+The application is now running on `127.0.0.1:8010`.
 
 ## Technologies
 
