@@ -1,3 +1,8 @@
+> [!WARNING]
+> **This repository has moved!** 🚀
+> This project is now part of the [discord-status-as-image](https://github.com/pdt1806/discord-status-as-image) repository.
+> You can find the active source code for this module in the [`backend/discord_worker`](https://github.com/pdt1806/discord-status-as-image/tree/main/backend/discord_worker) directory.
+
 <p align="center"><img width="50%" src="https://raw.githubusercontent.com/pdt1806/refiner-discord-bot/main/public/frieren.gif" /></p>
 <h1 align="center">Refiner Discord Bot</h1>
 <p align="center">"Feel free to praise me more" <(￣︶￣)></p>
